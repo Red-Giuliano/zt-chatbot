@@ -1,0 +1,139 @@
+notebookId = "756c7a5a-2a1d-4a5d-85c1-aaa3a274549b"
+notebookName = "Zero True"
+
+[cells.2521b0b7-93b8-4bfc-8b39-b619fcd5f820]
+cellName = ""
+cellType = "markdown"
+hideCell = "False"
+hideCode = "False"
+expandCode = "False"
+showTable = "False"
+nonReactive = "False"
+code = """
+# GPT Chatbot With Customizable System Prompt
+
+### Enter API Key To Use
+
+For local deployment if your api keys are defined this step will be skipped."""
+
+[cells.853bf6a8-79ef-44aa-9913-7c58d10b49ac]
+cellName = ""
+cellType = "code"
+hideCell = "False"
+hideCode = "False"
+expandCode = "False"
+showTable = "False"
+nonReactive = "False"
+code = """
+import zero_true as zt
+import openai
+
+#initialize state
+state = zt.state()
+if 'message_history' not in state.keys():
+    state['message_history']=[]
+if 'valid_openai_key' not in state.keys():
+    state['valid_openai_key']=False
+
+#logic to validate api keys
+if not state['valid_openai_key']:
+    try:
+        #check that call is successful
+        openai.Model.list()
+        state['valid_openai_key']=True
+    except:
+        #if not prompt user for input
+        openai.api_key=''
+        title = zt.Text(id='api key title', text='Enter Your OpenAI Api Key To Acess ChatGPT', type='text-h4')
+        openai_key_input = zt.TextInput(id='openai_key',label='Please Enter Your OpenAI Key')
+        if openai_key_input.value:
+            try:
+                openai.api_key = openai_key_input.value
+                # Perform a test call to ensure the API key is valid
+                openai.Model.list()
+                state['valid_openai_key']=True
+                del openai_key_input
+
+            except Exception as e:
+                print(f"Invalid API key: {e}")"""
+
+[cells.b0116172-8ec6-400b-94c9-f4edee728fef]
+cellName = ""
+cellType = "markdown"
+hideCell = "False"
+hideCode = "False"
+expandCode = "False"
+showTable = "False"
+nonReactive = "False"
+code = """
+# Interact With Your Chatbot!"""
+
+[cells.fc26c1c2-6763-42ae-a5f8-5a1852ea14e0]
+cellName = ""
+cellType = "code"
+hideCell = "False"
+hideCode = "False"
+expandCode = "False"
+showTable = "False"
+nonReactive = "False"
+code = """
+# UI Components
+if state['valid_openai_key']:
+    title = zt.Text(id='title', text='Change the personality of your GPT Here:', type='text-h4')
+    system_prompt = zt.TextArea(id='area', label='Enter System Prompt', value='You are a helpful assistant.')
+    temperature_slider = zt.Slider(id="temperature_slider", min=0, max=1, step=0.01, value=0.5, label="Temperature")
+    generate_button = zt.Button(id="generate_button", text="Generate")
+    prompt_input = zt.TextInput(id="prompt_input", label="Enter your prompt", placeholder="Type something...")
+    clear_chat = zt.Button(id='clear_chat', text='Clear Chat')
+
+    
+def generate_text(prompt, temperature):
+    messages = [{"role": "system", "content": system_prompt.value}]
+    messages += state["message_history"]
+    messages.append({"role": "user", "content": prompt})
+    
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            temperature=temperature
+        )
+        return response.choices[0].message['content'].strip()
+    except Exception as e:
+        return f"An error occurred: {e}"
+
+def create_layout():
+    #cards for user prompts and gpt responses
+    cards_for_messages = [
+        zt.Row([zt.Card(
+            id=f"message_card_{index}",
+            childComponents=[
+                zt.Text(id=f"header_{index}", text=("User Input:" if message["role"] == "user" else "GPT Output:"), color=("primary" if message["role"] == "user" else "secondary")).id,
+                zt.Text(id=f"message_{index}", text=message["content"], color="info").id
+            ],
+            color=("blue" if message["role"] == "user" else "green"),
+            width=1200
+        ).id]) 
+        for index, message in enumerate(state["message_history"])
+    ]
+    
+    #layout with other components
+    layout_rows = cards_for_messages + [
+        zt.Row([prompt_input.id]),
+        zt.Row([temperature_slider.id]),
+        zt.Row([generate_button.id]),
+        zt.Row([clear_chat.id])
+    ]
+    layout = zt.Layout(rows=layout_rows)
+
+#only generate ui if api key is valid
+if state['valid_openai_key']:
+    if generate_button.value or prompt_input.value:
+        generated_response = generate_text(prompt_input.value, temperature_slider.value)
+        state["message_history"].append({"role": "user", "content": prompt_input.value})
+        state["message_history"].append({"role": "assistant", "content": generated_response})
+        prompt_input.value=None
+    if clear_chat.value:
+        state["message_history"] = []
+    create_layout()"""
+
