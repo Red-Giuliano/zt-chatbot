@@ -30,6 +30,7 @@ import openai
 
 #initialize state
 state = zt.state()
+
 if 'message_history' not in state.keys():
     state['message_history']=[]
 if 'valid_openai_key' not in state.keys():
@@ -39,7 +40,7 @@ if 'valid_openai_key' not in state.keys():
 if not state['valid_openai_key']:
     try:
         #check that call is successful
-        openai.Model.list()
+        openai.models.list()
         state['valid_openai_key']=True
     except:
         #if not prompt user for input
@@ -50,7 +51,7 @@ if not state['valid_openai_key']:
             try:
                 openai.api_key = openai_key_input.value
                 # Perform a test call to ensure the API key is valid
-                openai.Model.list()
+                openai.models.list()
                 state['valid_openai_key']=True
                 del openai_key_input
 
@@ -93,12 +94,12 @@ def generate_text(prompt, temperature):
     messages.append({"role": "user", "content": prompt})
     
     try:
-        response = openai.ChatCompletion.create(
+        response = openai.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=messages,
             temperature=temperature
         )
-        return response.choices[0].message['content'].strip()
+        return response.choices[0].message.content
     except Exception as e:
         return f"An error occurred: {e}"
 
